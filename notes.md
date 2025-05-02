@@ -5,6 +5,21 @@
 <p>
 **0x** - Notation for hexadecimal (e.g., 0xFF)
 A single hex digit can be represented by a nibble in binary.
+
+In Java, numbers are all treated as signed.
+However, for the purpose of the chip8 emulator, unsigned numbers are required.
+Also, chip8 emulators traditionally use various data types to store data.
+
+There are a number of potential solutions:
+
+- The method *.toUnsignedInt* can be used to preserve their original unsigned values whilst converting.
+
+- Another solution would be to exclusively use ints, which would simplify conversions. However, explicitly converting between types seems helpful in code readability.
+
+- A less clean, though simple, solution would be to use more bits than otherwise necessary, and mask out the sign bit.
+
+The third solution - using a larger type and masking down - is what I will be using.
+
 </p>
 
 ### Type ranges:
