@@ -3,7 +3,7 @@
 ## Bitwise Operations
 
 <p>
-**0x** - Notation for hexadecimal (e.g., 0xFF)
+0x - Notation for hexadecimal (e.g., 0xFF)
 A single hex digit can be represented by a nibble in binary.
 
 In Java, numbers are all treated as signed.
@@ -19,7 +19,6 @@ There are a number of potential solutions:
 - A less clean, though simple, solution would be to use more bits than otherwise necessary, and mask out the sign bit.
 
 The third solution - using a larger type and masking down - is what I will be using.
-
 </p>
 
 ### Type ranges:
@@ -39,7 +38,6 @@ Binary operations use two operands.
 
 NOT is unary.
 AND, OR, and XOR are binary.
-
 </p>
 
 #### AND (&&)
