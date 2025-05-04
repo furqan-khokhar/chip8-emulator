@@ -32,7 +32,7 @@ public class Chip {
 
     // 16 general purpose 8-bit variable registers
     // VF is also used as a flag register
-    private byte[] V = new char [16];
+    private byte[] V = new byte [16];
 
     // 16 keys
     // 1 2 3 4
@@ -69,15 +69,33 @@ public class Chip {
     // as such, it is technically "display modified (since the previous redraw)"
     private boolean displayModified;
 
+    private short fetch() {
+        // fetch opcode
+        byte op1 = memory[Byte.toUnsignedInt(pc)];
+        byte op2 = memory[Byte.toUnsignedInt(pc) + 1];
+
+        pc += 2;
+
+        // Shift the first op 8 left to put it first
+        // OR them to put them together
+        short opcode = (short) (Byte.toUnsignedInt(op1) << 8 | Byte.toUnsignedInt(op2));
+
+        System.out.println("OPCODE: " + Integer.toHexString(Short.toUnsignedInt(opcode)));
+
+        // return opcode
+        return opcode;
+    }
+
     public void run() {
         // ~700 instructions per second is usually good
-        // should be able to customise this though
+        // should be able to configure this though
 
         // fetch opcode
             // read instruction
                 // read next 2 bytes being pointed at in memory
                 // combine these 2 bytes into a short
                 // increment pc by 2
+        short opcode = fetch();
 
         // decode opcode
             // mask with &0F
@@ -93,6 +111,5 @@ public class Chip {
 
             // execute opcode
                 // in each case, do something
-
     }
 }
