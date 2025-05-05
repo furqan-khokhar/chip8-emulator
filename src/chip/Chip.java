@@ -1,17 +1,19 @@
 package chip;
 
+import java.util.Arrays;
+
 public class Chip {
-    // Chip8 has 4 kb of memory (8 bit memory)
+    // Chip8 has 4 kb of memory (8-bit memory)
     // 4 kb = 4 * 1024 = 4096 bytes
     // all of chip8's memory is RAM and considered writable
-    private byte[] memory = new byte[4096];
+    public byte[] memory = new byte[4096];
 
     // 64 * 32 resolution
-    private byte[] display = new byte[2048];
+    private boolean[][] display = new boolean[64][32];
 
     // program counter
     // points at current instruction in memory
-    private byte pc;
+    private short pc = (short) Integer.parseInt("512");
 
     // index register
     // 16 bits
@@ -71,8 +73,13 @@ public class Chip {
 
     private short fetch() {
         // fetch opcode
-        byte op1 = memory[Byte.toUnsignedInt(pc)];
-        byte op2 = memory[Byte.toUnsignedInt(pc) + 1];
+        byte op1 = memory[Short.toUnsignedInt(pc)];
+        byte op2 = memory[Short.toUnsignedInt(pc) + 1];
+
+        //System.out.printf("0x%02X\n", pc);
+        System.out.println("Program counter: " + pc);
+        System.out.println("Op1: " + op1);
+        System.out.println("Op2: " + op2);
 
         pc += 2;
 
@@ -80,13 +87,144 @@ public class Chip {
         // OR them to put them together
         short opcode = (short) (Byte.toUnsignedInt(op1) << 8 | Byte.toUnsignedInt(op2));
 
-        System.out.println("OPCODE: " + Integer.toHexString(Short.toUnsignedInt(opcode)));
+        System.out.printf("Opcode: 0x%04X\n", opcode);
 
         // return opcode
         return opcode;
     }
 
-    public void run() {
+    private void decode_and_execute( short opcode ) {
+
+        // nibbles
+        int n1 = opcode & 0xF000;
+        int n2 = opcode & 0x0F00;
+        int n3 = opcode & 0x00F0;
+        int n4 = opcode & 0x000F;
+
+        /*
+        int x = n2;
+        int y = n3;
+        int n = n4;
+        int nn = (n3 << 4) + n4;
+        int nnn = (n2 << 8) + (n3 << 4) + n4;
+         */
+
+        switch (opcode & 0xF000) {
+
+            // 0...
+            case (0x0000):
+                // 00E0
+                if (opcode == 0x00E0) {
+                    // clear screen
+                    System.out.println("00E0");
+                    for (boolean[] row : display) {
+                        Arrays.fill(row, false);
+                    }
+                }
+                break;
+
+            // 1...
+            case (0x1000):
+                // 1NNN
+                // jump to nnn (12-bit immediate memory address)
+                System.out.println("1NNN");
+                pc = (byte) (opcode & 0x0FFF);
+                break;
+
+            // 2...
+            case (0x2000):
+                break;
+
+            // 3...
+            case (0x3000):
+                break;
+
+            // 4...
+            case (0x4000):
+                break;
+
+            // 5...
+            case (0x5000):
+                break;
+
+            // 6...
+            case (0x6000):
+                // 6XNN
+                System.out.println("6XNN");
+                V[(opcode & 0x0F00) >> 8] = (byte) (opcode & 0x00FF);
+                break;
+
+            // 7...
+            case (0x7000):
+                // 7XNN
+                System.out.println("7XNN");
+                V[opcode & 0x0F00] += (byte) (opcode & 0X00FF);
+                break;
+
+            // 8...
+            case (0x8000):
+                break;
+
+            // 9...
+            case (0x9000):
+                break;
+
+            // A...
+            case(0xA000):
+                // ANNN
+                System.out.println("ANNN");
+                i = (short) (opcode & 0x0FFF);
+                break;
+
+            // B...
+            case(0xB000):
+                break;
+
+            // C...
+            case (0xC000):
+                break;
+
+            // D...
+            case (0xD000):
+                // DXYN
+                System.out.println("DXYN");
+                int x = V[(opcode & 0x0F00) >> 8] & 0x3F;
+                int y = V[(opcode & 0x00F0) >> 4] & 0x1F;
+
+                V[0xF] = 0;
+
+                for (int row = 0; row >= (opcode & 0x000F); row++) {
+                    byte spriteByte = memory[i + row];
+                    for (int col = 0; col < 8; col++) {
+                        boolean spriteBit = (spriteByte & 0x80 >> col) != 0;
+                        boolean displayPixel = display[x][y];
+
+                        if (spriteBit) {
+                            if (displayPixel) {
+                                V[0xF] = 1;
+                            }
+                            display[y + row][x + col] = !displayPixel;
+                        }
+                        x++;
+                    }
+                    y++;
+                }
+
+                printDisplay();
+                break;
+
+            // E...
+            case (0xE000):
+                break;
+
+            // F...
+            case (0xF000):
+                break;
+        }
+
+    }
+
+    public void tick() {
         // ~700 instructions per second is usually good
         // should be able to configure this though
 
@@ -107,9 +245,27 @@ public class Chip {
             // third nibble - looks up another register in V (V0-VF)
             // fourth nibble - 4-bit number
             // third+fourth nibbles - 8-bit immediate number
-            // second+third+fourth nibbles - 12-bit immediate mmeory address
+            // second+third+fourth nibbles - 12-bit immediate memory address
 
             // execute opcode
                 // in each case, do something
+        decode_and_execute(opcode);
+
+        if (delay_timer > 0) {
+            delay_timer--;
+        }
+        if (sound_timer > 0) {
+            sound_timer--;
+        }
+    }
+
+    private void printDisplay() {
+        System.out.println("Display: ");
+        for (boolean[] row : display) {
+            for (boolean col : row) {
+                System.out.print(col ? "#" : ".");
+            }
+            System.out.println();
+        }
     }
 }
