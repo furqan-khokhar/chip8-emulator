@@ -9,7 +9,15 @@ public class Chip {
     public byte[] memory = new byte[4096];
 
     // 64 * 32 resolution
-    private boolean[][] display = new boolean[64][32];
+    public boolean[][] display = new boolean[32][64];
+
+    /*
+    {
+      {0000}
+      {0000}
+      {0000}
+    }
+     */
 
     // program counter
     // points at current instruction in memory
@@ -77,9 +85,9 @@ public class Chip {
         byte op2 = memory[Short.toUnsignedInt(pc) + 1];
 
         //System.out.printf("0x%02X\n", pc);
-        System.out.println("Program counter: " + pc);
-        System.out.println("Op1: " + op1);
-        System.out.println("Op2: " + op2);
+        //System.out.println("PC: " + pc);
+        //System.out.println("Op1: " + op1);
+        //System.out.println("Op2: " + op2);
 
         pc += 2;
 
@@ -87,7 +95,7 @@ public class Chip {
         // OR them to put them together
         short opcode = (short) (Byte.toUnsignedInt(op1) << 8 | Byte.toUnsignedInt(op2));
 
-        System.out.printf("Opcode: 0x%04X\n", opcode);
+        //System.out.printf("Opcode: 0x%04X\n", opcode);
 
         // return opcode
         return opcode;
@@ -96,23 +104,27 @@ public class Chip {
     private void decode_and_execute( short opcode ) {
 
         // nibbles
-        int n1 = opcode & 0xF000;
-        int n2 = opcode & 0x0F00;
-        int n3 = opcode & 0x00F0;
-        int n4 = opcode & 0x000F;
+        int n1 = (opcode & 0xF000) >> 12;
+        int n2 = (opcode & 0x0F00) >> 8;
+        int n3 = (opcode & 0x00F0) >> 4;
+        int n4 = (opcode & 0x000F);
 
-        /*
         int x = n2;
         int y = n3;
         int n = n4;
         int nn = (n3 << 4) + n4;
         int nnn = (n2 << 8) + (n3 << 4) + n4;
-         */
 
-        switch (opcode & 0xF000) {
+        System.out.format("OP: 0x%04X\t\t\tN1: 0x%01X\tN2: 0x%01X\tN3: 0x%01X\tN4: 0x%01X\n", opcode, n1, n2, n3, n4);
+        System.out.format("\t\t\t\t\tX: 0x%01X\tY: 0x%01X\tN: 0x%01X\tNN: 0x%02X\tNNN: 0x%03X\n", x, y, n, nn, nnn);
+        System.out.format("Before executing.\tPC: 0x%03X\tVX: 0x%01X\tVY: 0x%01X\tI: 0x%03X\n", pc, V[x], V[y], i);
+
+
+        switch ((opcode & 0xF000) >> 12) {
 
             // 0...
-            case (0x0000):
+            case (0x0):
+                System.out.println("0...");
                 // 00E0
                 if (opcode == 0x00E0) {
                     // clear screen
@@ -124,104 +136,105 @@ public class Chip {
                 break;
 
             // 1...
-            case (0x1000):
+            case (0x1):
                 // 1NNN
                 // jump to nnn (12-bit immediate memory address)
                 System.out.println("1NNN");
-                pc = (byte) (opcode & 0x0FFF);
+                pc = (short) nnn;
                 break;
 
             // 2...
-            case (0x2000):
+            case (0x2):
                 break;
 
             // 3...
-            case (0x3000):
+            case (0x3):
                 break;
 
             // 4...
-            case (0x4000):
+            case (0x4):
                 break;
 
             // 5...
-            case (0x5000):
+            case (0x5):
                 break;
 
             // 6...
-            case (0x6000):
+            case (0x6):
                 // 6XNN
                 System.out.println("6XNN");
-                V[(opcode & 0x0F00) >> 8] = (byte) (opcode & 0x00FF);
+                V[x] = (byte) (nn);
                 break;
 
             // 7...
-            case (0x7000):
+            case (0x7):
                 // 7XNN
                 System.out.println("7XNN");
-                V[opcode & 0x0F00] += (byte) (opcode & 0X00FF);
+                V[x] += (byte) (nn);
                 break;
 
             // 8...
-            case (0x8000):
+            case (0x8):
                 break;
 
             // 9...
-            case (0x9000):
+            case (0x9):
                 break;
 
             // A...
-            case(0xA000):
+            case(0xA):
                 // ANNN
                 System.out.println("ANNN");
-                i = (short) (opcode & 0x0FFF);
+                i = (short) nnn;
                 break;
 
             // B...
-            case(0xB000):
+            case(0xB):
                 break;
 
             // C...
-            case (0xC000):
+            case (0xC):
                 break;
 
             // D...
-            case (0xD000):
+            case (0xD):
                 // DXYN
                 System.out.println("DXYN");
-                int x = V[(opcode & 0x0F00) >> 8] & 0x3F;
-                int y = V[(opcode & 0x00F0) >> 4] & 0x1F;
-
-                V[0xF] = 0;
-
-                for (int row = 0; row >= (opcode & 0x000F); row++) {
-                    byte spriteByte = memory[i + row];
-                    for (int col = 0; col < 8; col++) {
-                        boolean spriteBit = (spriteByte & 0x80 >> col) != 0;
-                        boolean displayPixel = display[x][y];
-
-                        if (spriteBit) {
-                            if (displayPixel) {
-                                V[0xF] = 1;
-                            }
-                            display[y + row][x + col] = !displayPixel;
-                        }
-                        x++;
-                    }
-                    y++;
-                }
-
-                printDisplay();
+//                int x = V[(opcode & 0x0F00) >> 8] & 0x3F;
+//                int y = V[(opcode & 0x00F0) >> 4] & 0x1F;
+//
+//                V[0xF] = 0;
+//
+//                for (int row = 0; row >= (opcode & 0x000F); row++) {
+//                    byte spriteByte = memory[i + row];
+//                    for (int col = 0; col < 8; col++) {
+//                        boolean spriteBit = (spriteByte & 0x80 >> col) != 0;
+//                        boolean displayPixel = display[x][y];
+//
+//                        if (spriteBit) {
+//                            if (displayPixel) {
+//                                V[0xF] = 1;
+//                            }
+//                            display[y + row][x + col] = !displayPixel;
+//                        }
+//                        x++;
+//                    }
+//                    y++;
+//                }
+//
+//                printDisplay();
                 break;
 
             // E...
-            case (0xE000):
+            case (0xE):
                 break;
 
             // F...
-            case (0xF000):
+            case (0xF):
                 break;
         }
 
+        System.out.format("After executing.\tPC: 0x%04X\tVX: 0x%01X\tVY: 0x%01X\tI: 0x%03X\n", pc, V[x], V[y], i);
     }
 
     public void tick() {
