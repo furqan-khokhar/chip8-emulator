@@ -39,14 +39,21 @@ public class Main {
         // Load program
 
         for (int i = 0; i < bytes_read; i++) {
-            System.out.println(program[i]);
+            //System.out.println(program[i]);
             chip8.memory[512 + i] = program[i];
         }
 
         System.out.println("Bytes read: " + bytes_read);
 
-        for (int j = 0x200; j < bytes_read+0x200; j++) {
+        for (int j = 0; j < bytes_read/2; j++) {
             chip8.tick();
+        }
+
+        for (boolean[] row : chip8.display) {
+            for (boolean col : row) {
+                System.out.print(col ? "# " : ". ");
+            }
+            System.out.println();
         }
     }
 }
