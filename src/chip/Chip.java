@@ -200,29 +200,36 @@ public class Chip {
             case (0xD):
                 // DXYN
                 System.out.println("DXYN");
-//                int x = V[(opcode & 0x0F00) >> 8] & 0x3F;
-//                int y = V[(opcode & 0x00F0) >> 4] & 0x1F;
-//
-//                V[0xF] = 0;
-//
-//                for (int row = 0; row >= (opcode & 0x000F); row++) {
-//                    byte spriteByte = memory[i + row];
-//                    for (int col = 0; col < 8; col++) {
-//                        boolean spriteBit = (spriteByte & 0x80 >> col) != 0;
-//                        boolean displayPixel = display[x][y];
-//
-//                        if (spriteBit) {
-//                            if (displayPixel) {
-//                                V[0xF] = 1;
-//                            }
-//                            display[y + row][x + col] = !displayPixel;
-//                        }
-//                        x++;
-//                    }
-//                    y++;
-//                }
-//
-//                printDisplay();
+
+                V[0xF] = 0;
+
+                int regX = Byte.toUnsignedInt(V[x]);
+                int regY = Byte.toUnsignedInt(V[y]);
+
+                System.out.printf("Xpos: 0x%02X\tYpos: 0x%02X\n", regX, regY);
+
+                byte height = (byte) n;
+                byte xPos = (byte)(regX % 64);
+                byte yPos = (byte)(regY % 32);
+
+                for (int row = 0; row < height; row++) {
+                    byte spriteByte = memory[i+row];
+                    System.out.printf("0x%02X\t",spriteByte);
+                    for (int col = 0; col < 8; col++) {
+                        boolean spritePixel = (spriteByte & (0x80 >> col)) != 0;
+                        boolean displayPixel = display[yPos+row][xPos+col];
+
+                        if (spritePixel) {
+                            if (displayPixel)
+                                V[0xF] = 1;
+                            display[yPos+row][xPos+col] = !displayPixel;
+                        }
+                    }
+                }
+
+                System.out.println();
+
+                printDisplay();
                 break;
 
             // E...
@@ -273,10 +280,9 @@ public class Chip {
     }
 
     private void printDisplay() {
-        System.out.println("Display: ");
         for (boolean[] row : display) {
             for (boolean col : row) {
-                System.out.print(col ? "#" : ".");
+                System.out.print(col ? "# " : ". ");
             }
             System.out.println();
         }
